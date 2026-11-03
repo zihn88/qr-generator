@@ -9,11 +9,18 @@
   <style>
     /* Custom animasi untuk efek pop-up */
     .pop-in {
-      animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
     }
     @keyframes popIn {
-      0% { opacity: 0; transform: scale(0.9); }
+      0% { opacity: 0; transform: scale(0.85); }
       100% { opacity: 1; transform: scale(1); }
+    }
+    
+    /* CSS Tambahan untuk merapikan dan melengkungkan QR Code */
+    #qrcode img, #qrcode canvas {
+      border-radius: 12px;
+      margin: 0 auto;
+      display: block;
     }
   </style>
 </head>
@@ -58,18 +65,20 @@
       </button>
 
       <div id="resultArea" class="hidden flex-col items-center mt-6 pt-6 border-t border-gray-100 pop-in">
-        <div class="bg-white p-3 rounded-2xl shadow-[0_0_15px_rgba(0,0,0,0.05)] border border-gray-100 mb-5 relative group">
-          <div id="qrcode" class="transition duration-300 group-hover:scale-105"></div>
+        
+        <!-- Bingkai Putih QR Code yang lebih besar dan elegan -->
+        <div class="bg-white p-5 rounded-3xl shadow-[0_10px_30px_rgba(0,0,0,0.08)] border border-purple-50 mb-6 relative group flex justify-center w-full max-w-[300px]">
+          <div id="qrcode" class="transition duration-500 group-hover:scale-105"></div>
         </div>
         
         <div class="w-full flex flex-col gap-3">
           <button 
             id="downloadBtn"
-            class="w-full text-gray-900 bg-white border-2 border-gray-200 hover:border-gray-300 hover:bg-gray-50 focus:ring-4 focus:ring-gray-100 font-bold rounded-xl text-sm px-5 py-3 text-center inline-flex items-center justify-center transition-all duration-200" 
+            class="w-full text-gray-900 bg-white border-2 border-gray-200 hover:border-purple-300 hover:bg-purple-50 hover:text-purple-700 focus:ring-4 focus:ring-purple-100 font-bold rounded-xl text-sm px-5 py-3 text-center inline-flex items-center justify-center transition-all duration-300" 
             type="button" 
             onclick="downloadQR()">
-            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-            Unduh PNG
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+            Unduh PNG Resolusi Tinggi
           </button>
           
           <div class="bg-gray-50 rounded-lg p-2 flex items-center justify-center">
@@ -114,11 +123,12 @@
       void resultArea.offsetWidth; 
       resultArea.classList.add("pop-in", "flex");
 
+      // Ukuran diperbesar menjadi 250x250, warna diganti Deep Purple
       qrcode = new QRCode(qrContainer, {
         text: url, 
-        width: 180, 
-        height: 180, 
-        colorDark : "#1f2937", 
+        width: 250, 
+        height: 250, 
+        colorDark : "#2e1065", /* Deep Purple */
         colorLight : "#ffffff", 
         correctLevel : QRCode.CorrectLevel.H
       });
@@ -129,7 +139,7 @@
       // ---------------------------------------------------------
       // MASUKKAN URL WEB APP GOOGLE APPS SCRIPT ANDA DI BAWAH INI
       // ---------------------------------------------------------
-      var apiEndpoint = "https://script.google.com/macros/s/AKfycbwMFYQSmJ_W0hnzToh5RWewaVS4t5vP8lrqr2ta8RdGQWUZ19XrO19BYoHA7DrjvzE-Xw/exec"; 
+      var apiEndpoint = "AKfycbwMFYQSmJ_W0hnzToh5RWewaVS4t5vP8lrqr2ta8RdGQWUZ19XrO19BYoHA7DrjvzE-Xw"; 
       
       var formData = new FormData();
       formData.append("url", url);
