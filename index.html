@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QR Code Generator - Nunha Creative</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <style>
+    /* Custom animasi untuk efek pop-up */
+    .pop-in {
+      animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+    @keyframes popIn {
+      0% { opacity: 0; transform: scale(0.9); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 min-h-screen flex flex-col justify-between font-sans selection:bg-purple-300 selection:text-purple-900">
+  
+  <main class="flex-grow flex items-center justify-center p-6 w-full">
+    
+    <div class="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-8 w-full max-w-lg border border-white/40 transform transition-all duration-300 hover:shadow-purple-500/20">
+      
+      <div class="text-center mb-8">
+        <div class="inline-flex items-center justify-center p-3 bg-purple-100 rounded-full mb-3">
+          <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+        </div>
+        <h1 class="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-blue-500 tracking-tight">QR Generator</h1>
+        <p class="text-gray-500 mt-2 text-sm font-medium">Ubah tautan Google Drive menjadi QR Code interaktif</p>
+      </div>
+      
+      <div class="mb-5 relative">
+        <label class="block text-gray-700 text-sm font-semibold mb-2 ml-1" for="urlInput">
+          Tautan Google Drive
+        </label>
+        <div class="relative">
+          <input 
+            class="w-full bg-gray-50 border border-gray-200 text-gray-800 text-sm rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 block p-3.5 transition duration-200 outline-none" 
+            id="urlInput" 
+            type="url" 
+            placeholder="https://drive.google.com/..."
+            onkeypress="handleEnter(event)"
+          >
+        </div>
+        <p id="errorText" class="text-red-500 text-xs font-medium mt-2 ml-1 hidden flex items-center">
+          <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+          Tautan tidak boleh kosong!
+        </p>
+      </div>
+      
+      <button 
+        class="w-full text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 focus:ring-4 focus:ring-purple-300 font-bold rounded-xl text-sm px-5 py-3.5 text-center mb-2 shadow-lg shadow-purple-500/30 transform active:scale-95 transition-all duration-200" 
+        type="button" 
+        onclick="generateQR()">
+        Generate QR Code
+      </button>
+
+      <div id="resultArea" class="hidden flex-col items-center mt-6 pt-6 border-t border-gray-100 pop-in">
+        <div class="bg-white p-3 rounded-2xl shadow-[0_0_15px_rgba(0,0,0,0.05)] border border-gray-100 mb-5 relative group">
+          <div id="qrcode" class="transition duration-300 group-hover:scale-105"></div>
+        </div>
+        
+        <div class="w-full flex flex-col gap-3">
+          <button 
+            id="downloadBtn"
+            class="w-full text-gray-900 bg-white border-2 border-gray-200 hover:border-gray-300 hover:bg-gray-50 focus:ring-4 focus:ring-gray-100 font-bold rounded-xl text-sm px-5 py-3 text-center inline-flex items-center justify-center transition-all duration-200" 
+            type="button" 
+            onclick="downloadQR()">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+            Unduh PNG
+          </button>
+          
+          <div class="bg-gray-50 rounded-lg p-2 flex items-center justify-center">
+            <p id="statusSimpan" class="text-gray-500 text-xs font-medium"></p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <footer class="w-full text-center pb-6 text-white/90">
+    <p class="text-sm font-semibold tracking-wider drop-shadow-md">
+      &copy; NUNHA CREATIVE 2026
+    </p>
+  </footer>
+
+  <script>
+    var qrcode = null;
+
+    function handleEnter(event) {
+      if (event.key === "Enter") generateQR();
+    }
+
+    function generateQR() {
+      var url = document.getElementById("urlInput").value.trim();
+      var errorText = document.getElementById("errorText");
+      var resultArea = document.getElementById("resultArea");
+      var qrContainer = document.getElementById("qrcode");
+      var statusSimpan = document.getElementById("statusSimpan");
+
+      if (url === "") {
+        errorText.classList.remove("hidden");
+        resultArea.classList.add("hidden");
+        return;
+      }
+
+      errorText.classList.add("hidden");
+      qrContainer.innerHTML = ""; 
+      
+      resultArea.classList.remove("hidden", "pop-in");
+      void resultArea.offsetWidth; 
+      resultArea.classList.add("pop-in", "flex");
+
+      qrcode = new QRCode(qrContainer, {
+        text: url, 
+        width: 180, 
+        height: 180, 
+        colorDark : "#1f2937", 
+        colorLight : "#ffffff", 
+        correctLevel : QRCode.CorrectLevel.H
+      });
+
+      statusSimpan.innerHTML = '<span class="animate-pulse">⏳ Menyimpan ke Database...</span>';
+      statusSimpan.className = "text-indigo-500 text-xs font-medium";
+
+      // ---------------------------------------------------------
+      // MASUKKAN URL WEB APP GOOGLE APPS SCRIPT ANDA DI BAWAH INI
+      // ---------------------------------------------------------
+      var apiEndpoint = "https://script.google.com/macros/s/AKfycbwMFYQSmJ_W0hnzToh5RWewaVS4t5vP8lrqr2ta8RdGQWUZ19XrO19BYoHA7DrjvzE-Xw/exec"; 
+      
+      var formData = new FormData();
+      formData.append("url", url);
+
+      fetch(apiEndpoint, {
+        method: "POST",
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        if(data.status === "sukses"){
+          statusSimpan.innerHTML = '<span class="text-green-600">✓ Data berhasil disimpan</span>';
+        } else {
+          statusSimpan.innerHTML = '<span class="text-red-500">✕ Gagal: ' + data.message + '</span>';
+        }
+      })
+      .catch(error => {
+        statusSimpan.innerHTML = '<span class="text-red-500">✕ Gagal terhubung ke server</span>';
+      });
+    }
+
+    function downloadQR() {
+      var canvas = document.querySelector("#qrcode canvas");
+      if (canvas) {
+        var url = canvas.toDataURL("image/png");
+        var a = document.createElement("a");
+        a.href = url;
+        a.download = "QR_NunhaCreative_" + new Date().getTime() + ".png";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
+    }
+  </script>
+</body>
+</html>
