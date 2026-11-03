@@ -145,69 +145,77 @@
     // Parameter isNewGenerate (boolean) untuk mencegah pengiriman data ganda ke GSheets 
     // jika user hanya mengganti warna setelah QR dibuat.
     function generateQR(isNewGenerate = true) {
-      var url = document.getElementById("urlInput").value.trim();
-      var errorText = document.getElementById("errorText");
-      var resultArea = document.getElementById("resultArea");
-      var qrContainer = document.getElementById("qrcode");
-      var statusSimpan = document.getElementById("statusSimpan");
+  var url = document.getElementById("urlInput").value.trim();
+  var errorText = document.getElementById("errorText");
+  var resultArea = document.getElementById("resultArea");
+  var qrContainer = document.getElementById("qrcode");
+  var statusSimpan = document.getElementById("statusSimpan");
 
-      if (url === "") {
-        errorText.classList.remove("hidden");
-        resultArea.classList.add("hidden");
-        return;
+  if (url === "") {
+    errorText.classList.remove("hidden");
+    resultArea.classList.add("hidden");
+    return;
+  }
+
+  errorText.classList.add("hidden");
+  qrContainer.innerHTML = ""; 
+  
+  if (isNewGenerate) {
+    resultArea.classList.remove("hidden", "pop-in");
+    void resultArea.offsetWidth; 
+    resultArea.classList.add("pop-in", "flex");
+  }
+
+  qrcode = new QRCode(qrContainer, {
+    text: url, 
+    width: 250, 
+    height: 250, 
+    colorDark : warnaAktif, 
+    colorLight : "#ffffff", 
+    correctLevel : QRCode.CorrectLevel.H
+  });
+
+  if (isNewGenerate) {
+    statusSimpan.innerHTML = '<span class="animate-pulse">⏳ Mengunggah ke Drive & Database...</span>';
+    statusSimpan.className = "text-indigo-500 text-xs font-medium";
+
+    // Beri sedikit jeda (500ms) agar canvas selesai dirender sepenuhnya
+    setTimeout(function() {
+      // Ambil gambar dari canvas QR Code
+      var canvas = document.querySelector("#qrcode canvas");
+      var base64Data = "";
+      if(canvas) {
+        // Ubah gambar ke format base64 dan hapus teks awalan "data:image/png;base64,"
+        base64Data = canvas.toDataURL("image/png").replace(/^data:image\/png;base64,/, "");
       }
 
-      errorText.classList.add("hidden");
-      qrContainer.innerHTML = ""; 
+      // ---------------------------------------------------------
+      // MASUKKAN URL WEB APP GOOGLE APPS SCRIPT ANDA DI BAWAH INI
+      // ---------------------------------------------------------
+      var apiEndpoint = "https://script.google.com/macros/s/AKfycbwMFYQSmJ_W0hnzToh5RWewaVS4t5vP8lrqr2ta8RdGQWUZ19XrO19BYoHA7DrjvzE-Xw/exec"; 
       
-      if (isNewGenerate) {
-        resultArea.classList.remove("hidden", "pop-in");
-        void resultArea.offsetWidth; 
-        resultArea.classList.add("pop-in", "flex");
-      }
+      var formData = new FormData();
+      formData.append("url", url);
+      formData.append("image", base64Data); // Kirim gambar ke server
 
-      // Generate dengan warna dinamis dari variabel warnaAktif
-      qrcode = new QRCode(qrContainer, {
-        text: url, 
-        width: 250, 
-        height: 250, 
-        colorDark : warnaAktif, 
-        colorLight : "#ffffff", 
-        correctLevel : QRCode.CorrectLevel.H
+      fetch(apiEndpoint, {
+        method: "POST",
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        if(data.status === "sukses"){
+          statusSimpan.innerHTML = '<span class="text-green-600">✓ Tersimpan di Sheets & Drive</span>';
+        } else {
+          statusSimpan.innerHTML = '<span class="text-red-500">✕ Gagal: ' + data.message + '</span>';
+        }
+      })
+      .catch(error => {
+        statusSimpan.innerHTML = '<span class="text-red-500">✕ Gagal terhubung ke server</span>';
       });
-
-      // Hanya kirim ke server (Google Sheets) jika ini adalah generate baru,
-      // bukan sekadar ganti warna saat QR sudah jadi.
-      if (isNewGenerate) {
-        statusSimpan.innerHTML = '<span class="animate-pulse">⏳ Menyimpan ke Database...</span>';
-        statusSimpan.className = "text-indigo-500 text-xs font-medium";
-
-        // ---------------------------------------------------------
-        // MASUKKAN URL WEB APP GOOGLE APPS SCRIPT ANDA DI BAWAH INI
-        // ---------------------------------------------------------
-        var apiEndpoint = "https://script.google.com/macros/s/AKfycbwMFYQSmJ_W0hnzToh5RWewaVS4t5vP8lrqr2ta8RdGQWUZ19XrO19BYoHA7DrjvzE-Xw/exec"; 
-        
-        var formData = new FormData();
-        formData.append("url", url);
-
-        fetch(apiEndpoint, {
-          method: "POST",
-          body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-          if(data.status === "sukses"){
-            statusSimpan.innerHTML = '<span class="text-green-600">✓ Data berhasil disimpan</span>';
-          } else {
-            statusSimpan.innerHTML = '<span class="text-red-500">✕ Gagal: ' + data.message + '</span>';
-          }
-        })
-        .catch(error => {
-          statusSimpan.innerHTML = '<span class="text-red-500">✕ Gagal terhubung ke server</span>';
-        });
-      }
-    }
-
+    }, 500); // Akhir dari setTimeout
+  }
+}
     function downloadQR() {
       var canvas = document.querySelector("#qrcode canvas");
       if (canvas) {
