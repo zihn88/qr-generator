@@ -26,16 +26,16 @@
 </head>
 <body class="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 min-h-screen flex flex-col justify-between font-sans selection:bg-purple-300 selection:text-purple-900">
   
-  <main class="flex-grow flex items-center justify-center p-6 w-full">
+  <main class="flex-grow flex items-center justify-center p-4 w-full">
     
-    <div class="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-8 w-full max-w-lg border border-white/40 transform transition-all duration-300 hover:shadow-purple-500/20">
+    <div class="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-7 sm:p-8 w-full max-w-lg border border-white/40 transform transition-all duration-300 hover:shadow-purple-500/20">
       
-      <div class="text-center mb-8">
-        <div class="inline-flex items-center justify-center p-3 bg-purple-100 rounded-full mb-3">
+      <div class="text-center mb-6">
+        <div class="inline-flex items-center justify-center p-3 bg-purple-100 rounded-full mb-3 shadow-sm">
           <svg class="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
         </div>
         <h1 class="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-blue-500 tracking-tight">QR Generator</h1>
-        <p class="text-gray-500 mt-2 text-sm font-medium">Ubah tautan Google Drive menjadi QR Code interaktif</p>
+        <p class="text-gray-500 mt-1 text-sm font-medium">Ubah tautan Google Drive menjadi QR Code interaktif</p>
       </div>
       
       <div class="mb-5 relative">
@@ -56,6 +56,25 @@
           Tautan tidak boleh kosong!
         </p>
       </div>
+
+      <!-- Fitur Pilihan Warna -->
+      <div class="mb-6">
+        <label class="block text-gray-700 text-sm font-semibold mb-3 ml-1">
+          Warna QR Code
+        </label>
+        <div class="flex justify-start space-x-3 ml-1">
+          <!-- Hitam -->
+          <button type="button" onclick="pilihWarna('#1f2937', this)" class="color-btn w-8 h-8 rounded-full bg-gray-800 shadow-md transition-transform hover:scale-110 focus:outline-none"></button>
+          <!-- Ungu Tua (Default Active) -->
+          <button type="button" onclick="pilihWarna('#2e1065', this)" class="color-btn w-8 h-8 rounded-full bg-purple-900 shadow-md transition-transform hover:scale-110 focus:outline-none ring-2 ring-offset-2 ring-purple-400"></button>
+          <!-- Biru -->
+          <button type="button" onclick="pilihWarna('#1e3a8a', this)" class="color-btn w-8 h-8 rounded-full bg-blue-900 shadow-md transition-transform hover:scale-110 focus:outline-none"></button>
+          <!-- Hijau -->
+          <button type="button" onclick="pilihWarna('#064e3b', this)" class="color-btn w-8 h-8 rounded-full bg-emerald-900 shadow-md transition-transform hover:scale-110 focus:outline-none"></button>
+          <!-- Merah -->
+          <button type="button" onclick="pilihWarna('#7f1d1d', this)" class="color-btn w-8 h-8 rounded-full bg-red-900 shadow-md transition-transform hover:scale-110 focus:outline-none"></button>
+        </div>
+      </div>
       
       <button 
         class="w-full text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 focus:ring-4 focus:ring-purple-300 font-bold rounded-xl text-sm px-5 py-3.5 text-center mb-2 shadow-lg shadow-purple-500/30 transform active:scale-95 transition-all duration-200" 
@@ -66,7 +85,6 @@
 
       <div id="resultArea" class="hidden flex-col items-center mt-6 pt-6 border-t border-gray-100 pop-in">
         
-        <!-- Bingkai Putih QR Code yang lebih besar dan elegan -->
         <div class="bg-white p-5 rounded-3xl shadow-[0_10px_30px_rgba(0,0,0,0.08)] border border-purple-50 mb-6 relative group flex justify-center w-full max-w-[300px]">
           <div id="qrcode" class="transition duration-500 group-hover:scale-105"></div>
         </div>
@@ -98,12 +116,35 @@
 
   <script>
     var qrcode = null;
+    var warnaAktif = "#2e1065"; // Default Ungu Tua
 
-    function handleEnter(event) {
-      if (event.key === "Enter") generateQR();
+    // Fungsi untuk mengubah warna terpilih dan style tombol
+    function pilihWarna(hexColor, elemen) {
+      warnaAktif = hexColor;
+      
+      // Hapus ring dari semua tombol warna
+      var tombolWarna = document.querySelectorAll('.color-btn');
+      tombolWarna.forEach(function(btn) {
+        btn.classList.remove('ring-2', 'ring-offset-2', 'ring-purple-400');
+      });
+      
+      // Tambahkan ring ke tombol yang diklik
+      elemen.classList.add('ring-2', 'ring-offset-2', 'ring-purple-400');
+
+      // Jika QR code sudah ada (sedang tampil), generate ulang otomatis dengan warna baru
+      var resultArea = document.getElementById("resultArea");
+      if (!resultArea.classList.contains("hidden")) {
+        generateQR(false); // false artinya tidak perlu menganimasi ulang teks "Menyimpan"
+      }
     }
 
-    function generateQR() {
+    function handleEnter(event) {
+      if (event.key === "Enter") generateQR(true);
+    }
+
+    // Parameter isNewGenerate (boolean) untuk mencegah pengiriman data ganda ke GSheets 
+    // jika user hanya mengganti warna setelah QR dibuat.
+    function generateQR(isNewGenerate = true) {
       var url = document.getElementById("urlInput").value.trim();
       var errorText = document.getElementById("errorText");
       var resultArea = document.getElementById("resultArea");
@@ -119,46 +160,52 @@
       errorText.classList.add("hidden");
       qrContainer.innerHTML = ""; 
       
-      resultArea.classList.remove("hidden", "pop-in");
-      void resultArea.offsetWidth; 
-      resultArea.classList.add("pop-in", "flex");
+      if (isNewGenerate) {
+        resultArea.classList.remove("hidden", "pop-in");
+        void resultArea.offsetWidth; 
+        resultArea.classList.add("pop-in", "flex");
+      }
 
-      // Ukuran diperbesar menjadi 250x250, warna diganti Deep Purple
+      // Generate dengan warna dinamis dari variabel warnaAktif
       qrcode = new QRCode(qrContainer, {
         text: url, 
         width: 250, 
         height: 250, 
-        colorDark : "#2e1065", /* Deep Purple */
+        colorDark : warnaAktif, 
         colorLight : "#ffffff", 
         correctLevel : QRCode.CorrectLevel.H
       });
 
-      statusSimpan.innerHTML = '<span class="animate-pulse">⏳ Menyimpan ke Database...</span>';
-      statusSimpan.className = "text-indigo-500 text-xs font-medium";
+      // Hanya kirim ke server (Google Sheets) jika ini adalah generate baru,
+      // bukan sekadar ganti warna saat QR sudah jadi.
+      if (isNewGenerate) {
+        statusSimpan.innerHTML = '<span class="animate-pulse">⏳ Menyimpan ke Database...</span>';
+        statusSimpan.className = "text-indigo-500 text-xs font-medium";
 
-      // ---------------------------------------------------------
-      // MASUKKAN URL WEB APP GOOGLE APPS SCRIPT ANDA DI BAWAH INI
-      // ---------------------------------------------------------
-      var apiEndpoint = "https://script.google.com/macros/s/AKfycbwMFYQSmJ_W0hnzToh5RWewaVS4t5vP8lrqr2ta8RdGQWUZ19XrO19BYoHA7DrjvzE-Xw/exec"; 
-      
-      var formData = new FormData();
-      formData.append("url", url);
+        // ---------------------------------------------------------
+        // MASUKKAN URL WEB APP GOOGLE APPS SCRIPT ANDA DI BAWAH INI
+        // ---------------------------------------------------------
+        var apiEndpoint = "https://script.google.com/macros/s/AKfycbwMFYQSmJ_W0hnzToh5RWewaVS4t5vP8lrqr2ta8RdGQWUZ19XrO19BYoHA7DrjvzE-Xw/exec"; 
+        
+        var formData = new FormData();
+        formData.append("url", url);
 
-      fetch(apiEndpoint, {
-        method: "POST",
-        body: formData
-      })
-      .then(response => response.json())
-      .then(data => {
-        if(data.status === "sukses"){
-          statusSimpan.innerHTML = '<span class="text-green-600">✓ Data berhasil disimpan</span>';
-        } else {
-          statusSimpan.innerHTML = '<span class="text-red-500">✕ Gagal: ' + data.message + '</span>';
-        }
-      })
-      .catch(error => {
-        statusSimpan.innerHTML = '<span class="text-red-500">✕ Gagal terhubung ke server</span>';
-      });
+        fetch(apiEndpoint, {
+          method: "POST",
+          body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+          if(data.status === "sukses"){
+            statusSimpan.innerHTML = '<span class="text-green-600">✓ Data berhasil disimpan</span>';
+          } else {
+            statusSimpan.innerHTML = '<span class="text-red-500">✕ Gagal: ' + data.message + '</span>';
+          }
+        })
+        .catch(error => {
+          statusSimpan.innerHTML = '<span class="text-red-500">✕ Gagal terhubung ke server</span>';
+        });
+      }
     }
 
     function downloadQR() {
